@@ -1,101 +1,108 @@
-# Starter Kit — by Vinay Bhoure
+<div align="center">
 
-A full-stack Next.js starter, pre-wired the way I set up every new project: Next.js (App Router)
-for both frontend and backend, Tailwind CSS, shared shadcn-style UI components, Zod validation,
-and Prisma configured for **either** PostgreSQL (Neon) or MongoDB (Atlas) — pick one via an env
-variable, no code changes needed.
+# Full-Stack Starter Kit
+
+**Next.js · Tailwind · shadcn/ui · Zod · Prisma — wired for PostgreSQL *or* MongoDB**
+
+Clone it, drop in a connection string, and start building. No boilerplate to rewrite.
+
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat&logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+![Landing page preview](docs/screenshot.jpg)
+
+</div>
+
+## Why this exists
+
+Every new project starts the same way: wire up Next.js, Tailwind, a validation layer, an ORM, and
+a database — before writing a single feature. This kit does that once, well, so cloning it is the
+setup step.
 
 ## Stack
 
-- **Next.js 16** (App Router, TypeScript) — frontend + backend in one app
-- **Tailwind CSS v4**
-- **shadcn-style UI components** (`src/components/ui`) — Button, Card, Badge, Input, built on
-  `class-variance-authority` + `clsx`/`tailwind-merge`, ready for `npx shadcn add <component>`
-- **Zod** — request validation (`src/lib/validations`)
-- **Prisma** — ORM, configured for PostgreSQL *or* MongoDB via `DATABASE_PROVIDER`
-- A small backend layer under `src/server/` (`config`, `controllers`, `routers`, `middleware`) so
-  API routes stay thin
+| Layer          | Choice                                                             |
+| -------------- | ------------------------------------------------------------------- |
+| Framework      | [Next.js 16](https://nextjs.org) (App Router, TypeScript) — frontend + backend in one app |
+| Styling        | [Tailwind CSS v4](https://tailwindcss.com)                          |
+| UI components  | shadcn-style primitives in `src/components/ui` (Button, Card, Badge, Input), ready for `npx shadcn add` |
+| Validation     | [Zod](https://zod.dev)                                              |
+| ORM            | [Prisma](https://www.prisma.io) — one schema per provider, switched by an env var |
+| Database       | PostgreSQL ([Neon](https://neon.tech)) **or** MongoDB ([Atlas](https://www.mongodb.com/atlas)) — pick one |
+| Notifications  | [sonner](https://sonner.emilkowal.ski) toasts + [lucide-react](https://lucide.dev) icons |
+| Backend layer  | `src/server/{config,controllers,routers,middleware}` — API routes stay thin |
 
-## Getting started
+## Quick start
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/vinayBhoure/starter-kit.git
 cd starter-kit
 npm install
 ```
 
-`npm install` automatically copies the right Prisma schema and runs `prisma generate`
-(see [Database setup](#database-setup) below) — nothing else to configure to get the app running.
+`npm install` copies the right Prisma schema and runs `prisma generate` automatically — nothing
+else to configure before the app boots.
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you'll see the starter kit landing page with
-a **Check DB Connection** button.
-
-> The button will fail until you've filled in `DATABASE_URL` (next section) — that's expected on a
-> fresh clone.
+Open [http://localhost:3000](http://localhost:3000). You'll land on the page above, with a
+**Check DB Connection** button that toasts success or failure once `DATABASE_URL` is set (next
+section) — until then, a failed check is expected.
 
 ## Database setup
 
-This kit supports **one database at a time** — PostgreSQL or MongoDB — chosen with
-`DATABASE_PROVIDER` in `.env`.
+This kit connects to **one database at a time**, chosen with `DATABASE_PROVIDER` in `.env`.
 
-1. Copy the example env file if you haven't already:
+1. Copy the example env file:
    ```bash
    cp .env.example .env
    ```
-2. In `.env`, set:
+2. Set your provider and connection string:
    ```bash
    DATABASE_PROVIDER=postgresql   # or: mongodb
-   DATABASE_URL=...               # see below for where to get this
+   DATABASE_URL=...
    ```
-3. Re-run the switch script (or just restart `npm run dev` — it runs this automatically):
+3. Apply the schema and re-generate the client:
    ```bash
-   npm run db:switch
-   ```
-4. Push the example schema to your database:
-   ```bash
+   npm run db:switch   # runs automatically on dev/build too
    npm run db:push
    ```
-5. Click **Check DB Connection** on the landing page. It calls `POST /api/health`, which writes
-   and reads back an example `Ping` row/document and reports latency.
+4. Click **Check DB Connection** — it writes and reads back an example `Ping` record and reports
+   round-trip latency in a toast.
 
-### Where to get `DATABASE_URL`
+**Where to get `DATABASE_URL`:**
 
-**PostgreSQL — Neon**
-Neon dashboard → your project → **Connect** → **Prisma** tab → copy the connection string
-(`postgresql://user:password@ep-xxxx-pooler.neon.tech/dbname?sslmode=require`).
+- **PostgreSQL (Neon):** dashboard → your project → **Connect** → **Prisma** tab
+- **MongoDB (Atlas):** dashboard → your cluster → **Connect** → **Drivers**
 
-**MongoDB — Atlas**
-Atlas dashboard → your cluster → **Connect** → **Drivers** → copy the connection string
-(`mongodb+srv://user:password@cluster0.mongodb.net/dbname?retryWrites=true&w=majority`).
-
-### Switching providers later
-
-Change `DATABASE_PROVIDER` and `DATABASE_URL` in `.env`, then run `npm run db:switch` (or
-`npm run dev` / `npm run build`). This copies `prisma/schema.postgresql.prisma` or
-`prisma/schema.mongodb.prisma` over `prisma/schema.prisma` and regenerates the Prisma client —
-there are two schema files so each can use the field types its provider needs (e.g. Mongo's
-`@db.ObjectId` vs Postgres's `cuid()`), but the models are kept in sync.
+Switching providers later is the same three steps — change the two `.env` values, re-run
+`npm run db:switch && npm run db:push`. Two schema files exist (`schema.postgresql.prisma`,
+`schema.mongodb.prisma`) so each can use the field types its provider needs, kept in sync as one
+model.
 
 ## Project structure
 
 ```
 prisma/
-  schema.postgresql.prisma   # source schema for Postgres
-  schema.mongodb.prisma      # source schema for MongoDB
-  schema.prisma              # generated — do not edit directly
+  schema.postgresql.prisma   # source schema — Postgres
+  schema.mongodb.prisma      # source schema — MongoDB
+  schema.prisma              # generated, do not edit directly
 scripts/
-  switch-db-provider.mjs     # copies the right schema + runs `prisma generate`
+  switch-db-provider.mjs     # copies the active schema + runs `prisma generate`
 src/
   app/
     page.tsx                 # landing page
     api/health/route.ts      # DB connection check endpoint
   components/
-    ui/                      # shared shadcn-style components (Button, Card, Badge, Input)
-    db-check.tsx             # "Check DB Connection" client component
+    ui/                      # shared UI primitives (Button, Card, Badge, Input)
+    db-check.tsx             # "Check DB Connection" button + toasts
   lib/
     db.ts                    # Prisma client singleton
     utils.ts                 # cn() helper
@@ -104,23 +111,18 @@ src/
     config/                  # env access
     controllers/             # business logic
     routers/                 # validate -> controller -> response
-    middleware/               # e.g. Zod body validation helper
+    middleware/               # Zod body-validation helper
 ```
 
-## Adding your own models & endpoints
+## Adding your own features
 
-1. Add a model to **both** `prisma/schema.postgresql.prisma` and `prisma/schema.mongodb.prisma`
-   (or just the one you're using).
-2. `npm run db:switch && npm run db:push`.
-3. Add a Zod schema in `src/lib/validations/`.
-4. Add a controller in `src/server/controllers/`, a router in `src/server/routers/`, and a route
-   file in `src/app/api/.../route.ts` that calls it — following the pattern in `health.*`.
+1. Add a model to `prisma/schema.postgresql.prisma` and/or `prisma/schema.mongodb.prisma`, then
+   `npm run db:switch && npm run db:push`.
+2. Add a Zod schema in `src/lib/validations/`.
+3. Add a controller in `src/server/controllers/`, a router in `src/server/routers/`, and a route
+   file under `src/app/api/.../route.ts` — following the `health.*` pattern.
+4. Need a new UI primitive? `npx shadcn add <component>` — `components.json` is already set up.
 
-## Adding more shadcn components
+## License
 
-```bash
-npx shadcn@latest add dialog
-```
-
-`components.json` is already configured, so new components land in `src/components/ui`
-alongside the ones already here.
+MIT — see [LICENSE](LICENSE). Built by [Vinay Bhoure](https://vinaybhoure.xyz).

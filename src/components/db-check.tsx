@@ -39,7 +39,12 @@ export function DbCheck() {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <Button onClick={checkConnection} disabled={status === "loading"}>
+      <Button
+        size="lg"
+        onClick={checkConnection}
+        disabled={status === "loading"}
+        className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-6 text-white shadow-lg shadow-violet-500/30 hover:opacity-90"
+      >
         {status === "loading" && <Loader2 className="animate-spin" />}
         Check DB Connection
       </Button>

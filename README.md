@@ -14,7 +14,7 @@ Clone it, drop in a connection string, and start building. No boilerplate to rew
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-![Landing page preview](docs/screenshot.jpg)
+![Landing page preview](docs/screenshot.png)
 
 </div>
 

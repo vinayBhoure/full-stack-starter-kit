@@ -1,26 +1,16 @@
-import { NextResponse } from "next/server";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// clerkMiddleware() protects nothing by default -- every route is public
-// unless matched below. See README.md -> "Authentication" for the full flow.
-const isProtectedRoute = createRouteMatcher(["/app(.*)"]);
-const isAdminRoute = createRouteMatcher(["/app/admin(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (!isProtectedRoute(req)) return;
-
-  const { userId, sessionClaims, redirectToSignIn } = await auth();
-
-  if (!userId) {
-    return redirectToSignIn({ returnBackUrl: req.url });
-  }
-
-  // Example role gate -- see README for how `sessionClaims.metadata.role`
-  // gets populated. Remove this block if you don't need roles yet.
-  if (isAdminRoute(req) && sessionClaims?.metadata?.role !== "admin") {
-    return NextResponse.redirect(new URL("/app", req.url));
-  }
-});
+// Next.js 16 renamed the `middleware.ts` file convention to `proxy.ts` —
+// this file plays the same role (runs before every matched request).
+// See: https://nextjs.org/docs/messages/middleware-to-proxy
+//
+// Clerk deprecated route-matching-based auth checks here (createRouteMatcher)
+// in favor of "resource-based" checks: each protected page/route/action calls
+// `await auth.protect()` itself, since path-based middleware gating can be
+// bypassed (Server Actions are called by ID, not by path; regex-to-route
+// mapping can have gaps). See src/app/app/page.tsx and
+// src/app/app/admin/page.tsx for where the actual protection now lives.
+export default clerkMiddleware();
 
 export const config = {
   matcher: [

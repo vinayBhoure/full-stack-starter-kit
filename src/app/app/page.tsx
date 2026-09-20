@@ -13,6 +13,11 @@ import {
 import { DbCheck } from "@/components/db-check";
 
 export default async function AppHome() {
+  // Resource-based auth check — this IS the route protection now (Clerk
+  // deprecated gating routes centrally in proxy.ts). Redirects to /login
+  // if there's no signed-in user.
+  await auth.protect();
+
   const user = await currentUser();
   const { sessionClaims } = await auth();
   const isAdmin = sessionClaims?.metadata?.role === "admin";

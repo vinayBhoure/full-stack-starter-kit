@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Braces, Database, Layers, ShieldCheck, Sparkles } from "lucide-react";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { Show, UserButton } from "@clerk/nextjs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FloatingCard } from "@/components/floating-card";
@@ -25,7 +25,7 @@ export default function Home() {
 
         {/* auth nav */}
         <div className="absolute right-6 top-6 z-10 flex items-center gap-4">
-          <SignedOut>
+          <Show when="signed-out">
             <Link
               href="/login"
               className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
@@ -40,8 +40,8 @@ export default function Home() {
                 Sign up
               </Button>
             </Link>
-          </SignedOut>
-          <SignedIn>
+          </Show>
+          <Show when="signed-in">
             <Link
               href="/app"
               className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
@@ -49,7 +49,7 @@ export default function Home() {
               Go to App
             </Link>
             <UserButton />
-          </SignedIn>
+          </Show>
         </div>
 
         {/* decorative floating mockups — hidden below lg */}
@@ -74,12 +74,11 @@ export default function Home() {
           <p>{"}"}</p>
         </FloatingCard>
 
-        <FloatingCard title="proxy.ts" className="right-10 bottom-14 -rotate-3">
+        <FloatingCard title="app/page.tsx" className="right-10 bottom-14 -rotate-3">
           <p>
-            <span className="text-violet-500">clerkMiddleware</span>(auth {"=>"} {"{"}
+            <span className="text-violet-500">await</span> auth.protect()
           </p>
-          <p className="pl-3 text-neutral-400">auth.protect()</p>
-          <p>{"}"}</p>
+          <p className="text-neutral-400">{"// resource-based auth"}</p>
         </FloatingCard>
 
         <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
@@ -118,7 +117,7 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col items-center gap-3 pt-4 sm:flex-row">
-            <SignedOut>
+            <Show when="signed-out">
               <Link href="/signup">
                 <Button
                   size="lg"
@@ -132,8 +131,8 @@ export default function Home() {
                   Sign in
                 </Button>
               </Link>
-            </SignedOut>
-            <SignedIn>
+            </Show>
+            <Show when="signed-in">
               <Link href="/app">
                 <Button
                   size="lg"
@@ -142,7 +141,7 @@ export default function Home() {
                   Go to Dashboard
                 </Button>
               </Link>
-            </SignedIn>
+            </Show>
           </div>
 
           <p className="pt-2 text-xs text-neutral-400">

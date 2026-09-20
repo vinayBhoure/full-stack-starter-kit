@@ -4,16 +4,20 @@ import { auth } from "@clerk/nextjs/server";
 import { Badge } from "@/components/ui/badge";
 
 /**
- * Example role-gated page. `proxy.ts` already redirects non-admins away from
- * `/app/admin`; this in-page check is defense in depth (and the pattern to
- * copy for your own role-gated pages/server actions).
+ * Example role-gated page. Resource-based auth: this page checks its own
+ * authorization rather than relying on proxy.ts (Clerk deprecated
+ * middleware-based route gating — see src/proxy.ts).
  *
  * Requires a `role: "admin"` entry in a user's Clerk publicMetadata.
  * See README.md -> "Adding role-based access" for the full setup.
  */
 export default async function AdminPage() {
+  // Base sign-in requirement (redirects to /login if signed out).
+  await auth.protect();
+
   const { sessionClaims } = await auth();
 
+  // Role check — the actual gate for this page.
   if (sessionClaims?.metadata?.role !== "admin") {
     redirect("/app");
   }

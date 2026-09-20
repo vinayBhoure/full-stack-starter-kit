@@ -2,7 +2,7 @@
 
 # Full-Stack Starter Kit
 
-**Next.js · Tailwind · shadcn/ui · Zod · Prisma — wired for PostgreSQL *or* MongoDB**
+**Next.js · Tailwind · shadcn/ui · Zod · Clerk · Prisma — wired for PostgreSQL *or* MongoDB**
 
 Clone it, drop in a connection string, and start building. No boilerplate to rewrite.
 
@@ -113,9 +113,13 @@ already there, nothing to build.
    ```
 3. `npm run dev` and visit `/signup` — you'll land on `/app` afterwards.
 
-Route protection lives in `src/proxy.ts` (Next.js 16 renamed `middleware.ts` to `proxy.ts` —
-this **is** the middleware file). `clerkMiddleware()` protects nothing by default; only `/app`
-is matched and gated there. Everything else — including `/api/health` — stays public.
+`src/proxy.ts` (Next.js 16 renamed `middleware.ts` to `proxy.ts`) only wires up
+`clerkMiddleware()` — it does **not** gate routes. Clerk deprecated middleware-based route
+matching (`createRouteMatcher`) because path-based checks can be bypassed — Server Actions are
+invoked by ID rather than by URL, and regex-to-route mapping can have gaps. The recommended fix is
+**resource-based auth checks**: each protected page calls `await auth.protect()` itself. That's
+what `src/app/app/page.tsx` and `src/app/app/admin/page.tsx` do — open either file to see the
+pattern to copy for your own protected pages, routes, or Server Actions.
 
 **No local `User` table.** Clerk is the source of truth for identity. Anywhere you need to know
 who's signed in, call `auth()` (server) — you get a `userId` string, which is all you need to
@@ -137,8 +141,8 @@ not something this kit assumes you need.
 ### Adding role-based access
 
 Roles live in Clerk's `publicMetadata`, not the database — no schema, no webhook. This kit
-already ships the plumbing (`types/globals.d.ts`, the role check in `src/proxy.ts`, and the
-`/app/admin` example); you just need to turn it on:
+already ships the plumbing (`types/globals.d.ts` and the `/app/admin` example, which checks
+`sessionClaims.metadata.role` directly in the page); you just need to turn it on:
 
 1. **Clerk Dashboard → Sessions → Customize session token** — add:
    ```json
@@ -150,10 +154,12 @@ already ships the plumbing (`types/globals.d.ts`, the role check in `src/proxy.t
    ```
 3. Visit `/app/admin` signed in as that user — anyone else is redirected back to `/app`.
 
-To check a role anywhere else in the app (a server component, a server action, another route in
-`proxy.ts`), the pattern is always the same:
+To check a role anywhere else in the app (another server component, a server action, a route
+handler), the pattern is always the same — call `auth.protect()` first for the base sign-in
+check, then inspect the claim:
 
 ```ts
+await auth.protect(); // require sign-in
 const { sessionClaims } = await auth();
 if (sessionClaims?.metadata?.role !== "admin") { /* redirect, or return "Not authorized" */ }
 ```
@@ -173,13 +179,13 @@ scripts/
 types/
   globals.d.ts               # CustomJwtSessionClaims — the `Roles` union for RBAC
 src/
-  proxy.ts                   # route protection (Next.js 16's middleware.ts -> proxy.ts)
+  proxy.ts                   # wires up clerkMiddleware() only — no route gating (see Authentication)
   app/
     page.tsx                       # landing page
     login/[[...login]]/page.tsx    # <SignIn />
     signup/[[...signup]]/page.tsx  # <SignUp />
-    app/page.tsx                   # protected: welcome + DB connection check
-    app/admin/page.tsx             # protected: example role-gated page
+    app/page.tsx                   # protected via auth.protect() + DB connection check
+    app/admin/page.tsx             # protected via auth.protect() + role check
     api/health/route.ts            # DB connection check endpoint
   components/
     ui/                       # shared UI primitives (Button, Card, Badge, Input)

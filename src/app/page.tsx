@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { Braces, Database, Layers, ShieldCheck, Sparkles } from "lucide-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DbCheck } from "@/components/db-check";
+import { Button } from "@/components/ui/button";
 import { FloatingCard } from "@/components/floating-card";
 
 const stack = [
@@ -21,6 +22,35 @@ export default function Home() {
           className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(circle,#00000014_1px,transparent_1px)] [background-size:22px_22px]"
           aria-hidden
         />
+
+        {/* auth nav */}
+        <div className="absolute right-6 top-6 z-10 flex items-center gap-4">
+          <SignedOut>
+            <Link
+              href="/login"
+              className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
+            >
+              Sign in
+            </Link>
+            <Link href="/signup">
+              <Button
+                size="sm"
+                className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/20 hover:opacity-90"
+              >
+                Sign up
+              </Button>
+            </Link>
+          </SignedOut>
+          <SignedIn>
+            <Link
+              href="/app"
+              className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
+            >
+              Go to App
+            </Link>
+            <UserButton />
+          </SignedIn>
+        </div>
 
         {/* decorative floating mockups — hidden below lg */}
         <FloatingCard title="prisma/schema.prisma" className="left-8 top-14 -rotate-6">
@@ -44,9 +74,12 @@ export default function Home() {
           <p>{"}"}</p>
         </FloatingCard>
 
-        <FloatingCard title="DATABASE_PROVIDER" className="right-10 bottom-14 -rotate-3">
-          <p className="text-neutral-400">postgresql</p>
-          <p className="text-neutral-300">mongodb</p>
+        <FloatingCard title="proxy.ts" className="right-10 bottom-14 -rotate-3">
+          <p>
+            <span className="text-violet-500">clerkMiddleware</span>(auth {"=>"} {"{"}
+          </p>
+          <p className="pl-3 text-neutral-400">auth.protect()</p>
+          <p>{"}"}</p>
         </FloatingCard>
 
         <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
@@ -67,8 +100,8 @@ export default function Home() {
           </h1>
 
           <p className="max-w-lg text-balance text-neutral-500 sm:text-lg">
-            Next.js, Tailwind, Zod and Prisma — wired for PostgreSQL or MongoDB. Clone it, drop in
-            a connection string, and start building features on day one.
+            Next.js, Tailwind, Zod and Prisma — wired for PostgreSQL or MongoDB. Auth is already
+            in: sign up, sign in, and a protected dashboard, courtesy of Clerk.
           </p>
 
           <div className="flex flex-wrap justify-center gap-2 pt-1">
@@ -84,17 +117,33 @@ export default function Home() {
             ))}
           </div>
 
-          <Card className="mt-4 w-full max-w-md border-neutral-200 bg-white/80 shadow-lg shadow-black/[0.03] backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle>Database Connection</CardTitle>
-              <CardDescription>
-                Writes and reads back an example record using your DATABASE_URL.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DbCheck />
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center gap-3 pt-4 sm:flex-row">
+            <SignedOut>
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-8 text-white shadow-lg shadow-violet-500/30 hover:opacity-90"
+                >
+                  Get Started Free
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="lg" variant="outline" className="rounded-full px-8">
+                  Sign in
+                </Button>
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/app">
+                <Button
+                  size="lg"
+                  className="rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-8 text-white shadow-lg shadow-violet-500/30 hover:opacity-90"
+                >
+                  Go to Dashboard
+                </Button>
+              </Link>
+            </SignedIn>
+          </div>
 
           <p className="pt-2 text-xs text-neutral-400">
             MIT licensed · built by{" "}

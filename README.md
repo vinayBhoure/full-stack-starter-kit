@@ -35,6 +35,7 @@ setup step.
 | ORM            | [Prisma](https://www.prisma.io) — one schema per provider, switched by an env var |
 | Database       | PostgreSQL ([Neon](https://neon.tech)) **or** MongoDB ([Atlas](https://www.mongodb.com/atlas)) — pick one |
 | Notifications  | [sonner](https://sonner.emilkowal.ski) toasts + [lucide-react](https://lucide.dev) icons |
+| Auth           | [Clerk](https://clerk.com) — sign-in/sign-up, session handling, and route protection built in |
 | Backend layer  | `src/server/{config,controllers,routers,middleware}` — API routes stay thin |
 
 ## Quick start
@@ -45,8 +46,10 @@ cd starter-kit
 npm install
 ```
 
-`npm install` copies the right Prisma schema and runs `prisma generate` automatically — nothing
-else to configure before the app boots.
+`npm install` copies the right Prisma schema and runs `prisma generate` automatically. You still
+need a `DATABASE_URL` (below) and a pair of Clerk keys (see [Authentication](#authentication))
+before everything works end to end — the app boots without them, but the DB check and sign-in
+won't.
 
 ```bash
 npm run dev
@@ -87,6 +90,77 @@ Switching providers later is the same three steps — change the two `.env` valu
 `schema.mongodb.prisma`) so each can use the field types its provider needs, kept in sync as one
 model.
 
+## Authentication
+
+Auth is wired in with [Clerk](https://clerk.com) — sign-up, sign-in, and a protected route are
+already there, nothing to build.
+
+| Route          | Access             | What's there                                      |
+| -------------- | ------------------ | -------------------------------------------------- |
+| `/`            | Public             | Landing page                                       |
+| `/login`       | Public             | `<SignIn />`                                        |
+| `/signup`      | Public             | `<SignUp />`                                        |
+| `/app`         | Signed-in only     | Welcome page + the DB connection check              |
+| `/app/admin`   | `role: "admin"` only | Example role-gated page (see below)               |
+
+**Setup:**
+
+1. Create a free app at [dashboard.clerk.com](https://dashboard.clerk.com) → **API keys**.
+2. Add them to `.env`:
+   ```bash
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+   CLERK_SECRET_KEY=...
+   ```
+3. `npm run dev` and visit `/signup` — you'll land on `/app` afterwards.
+
+Route protection lives in `src/proxy.ts` (Next.js 16 renamed `middleware.ts` to `proxy.ts` —
+this **is** the middleware file). `clerkMiddleware()` protects nothing by default; only `/app`
+is matched and gated there. Everything else — including `/api/health` — stays public.
+
+**No local `User` table.** Clerk is the source of truth for identity. Anywhere you need to know
+who's signed in, call `auth()` (server) — you get a `userId` string, which is all you need to
+attach app data to a user later:
+
+```prisma
+model Post {
+  id       String @id @default(cuid())
+  title    String
+  authorId String // Clerk's userId — plain string, no foreign key
+}
+```
+
+If you later want users queryable/joinable in your own database (an admin table, reporting,
+extra fields Clerk doesn't have), sync one with a webhook — see
+[Clerk's guide](https://clerk.com/docs/webhooks/sync-data) — but that's an intentional upgrade,
+not something this kit assumes you need.
+
+### Adding role-based access
+
+Roles live in Clerk's `publicMetadata`, not the database — no schema, no webhook. This kit
+already ships the plumbing (`types/globals.d.ts`, the role check in `src/proxy.ts`, and the
+`/app/admin` example); you just need to turn it on:
+
+1. **Clerk Dashboard → Sessions → Customize session token** — add:
+   ```json
+   { "metadata": "{{user.public_metadata}}" }
+   ```
+2. **Clerk Dashboard → Users → pick a user → Public metadata:**
+   ```json
+   { "role": "admin" }
+   ```
+3. Visit `/app/admin` signed in as that user — anyone else is redirected back to `/app`.
+
+To check a role anywhere else in the app (a server component, a server action, another route in
+`proxy.ts`), the pattern is always the same:
+
+```ts
+const { sessionClaims } = await auth();
+if (sessionClaims?.metadata?.role !== "admin") { /* redirect, or return "Not authorized" */ }
+```
+
+`types/globals.d.ts` defines the `Roles` union (`"admin" | "moderator"` by default) — extend it
+with whatever roles your app needs.
+
 ## Project structure
 
 ```
@@ -96,22 +170,29 @@ prisma/
   schema.prisma              # generated, do not edit directly
 scripts/
   switch-db-provider.mjs     # copies the active schema + runs `prisma generate`
+types/
+  globals.d.ts               # CustomJwtSessionClaims — the `Roles` union for RBAC
 src/
+  proxy.ts                   # route protection (Next.js 16's middleware.ts -> proxy.ts)
   app/
-    page.tsx                 # landing page
-    api/health/route.ts      # DB connection check endpoint
+    page.tsx                       # landing page
+    login/[[...login]]/page.tsx    # <SignIn />
+    signup/[[...signup]]/page.tsx  # <SignUp />
+    app/page.tsx                   # protected: welcome + DB connection check
+    app/admin/page.tsx             # protected: example role-gated page
+    api/health/route.ts            # DB connection check endpoint
   components/
-    ui/                      # shared UI primitives (Button, Card, Badge, Input)
-    db-check.tsx             # "Check DB Connection" button + toasts
+    ui/                       # shared UI primitives (Button, Card, Badge, Input)
+    db-check.tsx              # "Check DB Connection" button + toasts
   lib/
-    db.ts                    # Prisma client singleton
-    utils.ts                 # cn() helper
-    validations/             # Zod schemas
+    db.ts                     # Prisma client singleton
+    utils.ts                  # cn() helper
+    validations/              # Zod schemas
   server/
-    config/                  # env access
-    controllers/             # business logic
-    routers/                 # validate -> controller -> response
-    middleware/               # Zod body-validation helper
+    config/                   # env access
+    controllers/               # business logic
+    routers/                   # validate -> controller -> response
+    middleware/                 # Zod body-validation helper
 ```
 
 ## Adding your own features

@@ -225,9 +225,11 @@ src/
   components/
     ui/                       # shared UI primitives (Button, Card, Badge, Input)
     db-check.tsx              # "Check DB Connection" button + toasts
-  lib/
+  config/
     db.ts                     # Prisma client singleton
     resend.ts                 # Resend client singleton
+    env.ts                    # central place to read server-side env vars
+  lib/
     send-email.ts             # sendEmail() — typed wrapper around Resend + templates
     utils.ts                  # cn() helper
     validations/              # Zod schemas
@@ -235,7 +237,6 @@ src/
     templates/
       welcome.tsx              # post-signup welcome email (React Email)
   server/
-    config/                   # env access
     controllers/               # business logic
     routers/                   # validate -> controller -> response
     middleware/                 # Zod body-validation helper

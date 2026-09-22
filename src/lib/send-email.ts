@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { resend } from "@/lib/resend";
+import { resend } from "@/config/resend";
 import WelcomeEmail, { type WelcomeEmailProps } from "@/emails/templates/welcome";
 
 /**

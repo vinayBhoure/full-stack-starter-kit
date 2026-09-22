@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/db";
-import { env } from "@/server/config/env";
+import { prisma } from "@/config/db";
+import { env } from "@/config/env";
 import type { PingInput } from "@/lib/validations/ping";
 
 export type HealthResult =

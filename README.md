@@ -36,6 +36,7 @@ setup step.
 | Database       | PostgreSQL ([Neon](https://neon.tech)) **or** MongoDB ([Atlas](https://www.mongodb.com/atlas)) — pick one |
 | Notifications  | [sonner](https://sonner.emilkowal.ski) toasts + [lucide-react](https://lucide.dev) icons |
 | Auth           | [Clerk](https://clerk.com) — sign-in/sign-up, session handling, and route protection built in |
+| Email          | [Resend](https://resend.com) + [React Email](https://react.email) — ready-to-call templates, not wired to auto-fire |
 | Backend layer  | `src/server/{config,controllers,routers,middleware}` — API routes stay thin |
 
 ## Quick start
@@ -167,6 +168,40 @@ if (sessionClaims?.metadata?.role !== "admin") { /* redirect, or return "Not aut
 `types/globals.d.ts` defines the `Roles` union (`"admin" | "moderator"` by default) — extend it
 with whatever roles your app needs.
 
+## Email
+
+Transactional email via [Resend](https://resend.com), with templates written as
+[React Email](https://react.email) components. This covers email flows Clerk itself
+doesn't handle — Clerk's hosted auth UI already sends verification codes, magic
+links, and password resets, so this stays out of Resend's way entirely.
+
+Setup:
+
+1. Create a free account at [resend.com](https://resend.com) and grab an API key from
+   **API Keys**.
+2. Set `RESEND_API_KEY` and `EMAIL_FROM` in `.env`. Without a verified sending domain,
+   Resend restricts you to sending from `onboarding@resend.dev` to your own account
+   email only (its sandbox mode) — fine for local development.
+3. Call `sendEmail()` wherever you need it:
+
+   ```ts
+   import { sendEmail } from "@/lib/send-email";
+
+   await sendEmail("user@example.com", "welcome", { name: "Ada" });
+   ```
+
+That's the whole surface area. There's no email preview server and nothing fires
+automatically — `sendEmail()` is a plain function you call explicitly, for example
+inside a Server Action after your own signup logic runs.
+
+**Adding a new template:**
+
+1. Create `src/emails/templates/<name>.tsx` exporting a React Email component.
+2. Register it in the `templates` map in `src/lib/send-email.ts` and give it a
+   subject line in the `subjects` map right below it.
+
+`sendEmail()` picks up the new template automatically, fully typed against its props.
+
 ## Project structure
 
 ```
@@ -192,8 +227,13 @@ src/
     db-check.tsx              # "Check DB Connection" button + toasts
   lib/
     db.ts                     # Prisma client singleton
+    resend.ts                 # Resend client singleton
+    send-email.ts             # sendEmail() — typed wrapper around Resend + templates
     utils.ts                  # cn() helper
     validations/              # Zod schemas
+  emails/
+    templates/
+      welcome.tsx              # post-signup welcome email (React Email)
   server/
     config/                   # env access
     controllers/               # business logic
